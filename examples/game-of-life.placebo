@@ -1,0 +1,137 @@
+function make_board
+  return []
+end
+
+function set_cell(board, x, y, alive)
+  store i = 0
+  loop while i < length(board)
+    if board[i][0] == x and board[i][1] == y
+      remove(board, i)
+      store i = i - 1
+    end
+    store i = i + 1
+  end
+  if alive == true
+    board + [x, y]
+  end
+end
+
+function get_cell(board, x, y)
+  loop each cell in board
+    if cell[0] == x and cell[1] == y
+      return true
+    end
+  end
+  return false
+end
+
+function count_neighbors(board, x, y)
+  store count = 0
+  loop each dx in range(-1, 2)
+    loop each dy in range(-1, 2)
+      if dx == 0 and dy == 0
+        skip
+      end
+      if get_cell(board, x + dx, y + dy) == true
+        store count = count + 1
+      end
+    end
+  end
+  return count
+end
+
+function next_generation(board)
+  store new_board = make_board()
+  store checked = []
+  loop each cell in board
+    store x = cell[0]
+    store y = cell[1]
+    loop each dx in range(-1, 2)
+      loop each dy in range(-1, 2)
+        store check_x = x + dx
+        store check_y = y + dy
+        store already = false
+        loop each pos in checked
+          if pos[0] == check_x and pos[1] == check_y
+            store already = true
+            stop
+          end
+        end
+        if already == false
+          checked + [check_x, check_y]
+          store neighbors = count_neighbors(board, check_x, check_y)
+          store alive = get_cell(board, check_x, check_y)
+          if alive == true and (neighbors == 2 or neighbors == 3)
+            set_cell(new_board, check_x, check_y, true)
+          else if alive == false and neighbors == 3
+            set_cell(new_board, check_x, check_y, true)
+          end
+        end
+      end
+    end
+  end
+  return new_board
+end
+
+function render(board)
+  if length(board) == 0
+    output "[Empty Board]"
+    return
+  end
+  store min_x = board[0][0]
+  store max_x = board[0][0]
+  store min_y = board[0][1]
+  store max_y = board[0][1]
+  loop each cell in board
+    if cell[0] < min_x
+      store min_x = cell[0]
+    end
+    if cell[0] > max_x
+      store max_x = cell[0]
+    end
+    if cell[1] < min_y
+      store min_y = cell[1]
+    end
+    if cell[1] > max_y
+      store max_y = cell[1]
+    end
+  end
+  store y = min_y
+  loop while y <= max_y
+    store line = ""
+    store x = min_x
+    loop while x <= max_x
+      if get_cell(board, x, y) == true
+        store line = line + "##"
+      else
+        store line = line + "  "
+      end
+      store x = x + 1
+    end
+    output line
+    store y = y + 1
+  end
+end
+
+function add_glider(board, x, y)
+  set_cell(board, x + 1, y, true)
+  set_cell(board, x + 2, y + 1, true)
+  set_cell(board, x, y + 2, true)
+  set_cell(board, x + 1, y + 2, true)
+  set_cell(board, x + 2, y + 2, true)
+end
+
+output "=== GAME OF LIFE IN PLACEBO ==="
+store board = make_board()
+add_glider(board, 5, 5)
+output "Initial state:"
+render(board)
+
+loop 4 times
+  store board = next_generation(board)
+  output ""
+  render(board)
+end
+
+output ""
+output "Simulation complete. Final live cell count: " + text(length(board))
