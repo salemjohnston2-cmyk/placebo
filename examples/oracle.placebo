@@ -1,0 +1,79 @@
+output "Welcome, seeker. I am the Oracle."
+output "Answer my questions, and I will reveal your true nature."
+output ""
+
+store name = input("What is your name? ")
+store color = input("What color speaks to you most? ")
+store month = input("What month were you born? ")
+store number_answer = input("Think of a number between 1 and 10. What is it? ")
+store animal = input("What animal do you fear most? ")
+
+store name_length = length(name)
+store month_number = number(month)
+store chosen_number = number(number_answer)
+
+store soul_number = (name_length * chosen_number) + month_number
+if soul_number > 100
+  store soul_number = soul_number - 100
+end
+if soul_number < 10
+  store soul_number = soul_number + 10
+end
+
+output ""
+output "The Oracle has spoken, " + name + "."
+output "=============================="
+
+if soul_number < 20
+  store personality = "the Quiet Architect"
+else if soul_number < 40
+  store personality = "the Wandering Dreamer"
+else if soul_number < 60
+  store personality = "the Hidden Flame"
+else if soul_number < 80
+  store personality = "the Ancient Soul"
+else
+  store personality = "the Cosmic Jester"
+end
+
+output "Your true nature is: " + personality
+
+if color == "blue" or color == "Blue"
+  output "You chose the color of depth. You think more than you speak."
+else if color == "red" or color == "Red"
+  output "You chose the color of fire. You feel everything intensely."
+else
+  output "You chose " + color + ". The unusual choice."
+end
+
+store cycle = soul_number % 7
+store season = ""
+if cycle == 0
+  store season = "the Season of Dawn"
+else if cycle == 1
+  store season = "the Season of Rain"
+else
+  store season = "the Season of Stars"
+end
+output "You are entering " + season
+
+store destiny_number = (name_length * chosen_number * month_number) % 12
+store destinies = [
+  "a hidden door will open for you",
+  "someone from your past will return",
+  "a risk will lead to unexpected reward",
+  "you will find something you thought was lost",
+  "a stranger will change your path",
+  "your patience will finally pay off",
+  "a creative idea will demand your attention",
+  "you will be called to lead",
+  "a journey you've been avoiding becomes necessary",
+  "an old habit will break forever",
+  "you will receive news that changes everything",
+  "a quiet opportunity will reveal itself"
+]
+
+output ""
+output "Your destiny: " + destinies[destiny_number]
+output ""
+output "I will be watching."
