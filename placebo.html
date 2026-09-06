@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Placebo — run it</title>
+<style>
+  :root{
+    --dirt-dark:#15100b; --dirt-medium:#241a12; --dirt-light:#34261a; --dirt-border:#4a3524;
+    --text-main:#ecdcc0; --text-dim:#a58f72; --gold:#d9b46a; --gold-bright:#e8c88a;
+    --pink:#ff8fae; --pink-deep:#e0708f; --green:#8fd47a;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--dirt-dark);color:var(--text-main);font-family:var(--sans);}
+  .wrap{max-width:900px;margin:0 auto;padding:18px 14px 60px;}
+  header{text-align:center;padding:10px 0 18px;}
+  header svg{width:80px;height:auto;}
+  h1{font-family:Georgia,serif;color:var(--gold-bright);font-size:30px;margin:6px 0 2px;}
+  .tag{color:var(--text-dim);font-style:italic;font-family:Georgia,serif;font-size:14px;margin:0;}
+  select{background:var(--dirt-medium);color:var(--text-main);border:1px solid var(--dirt-border);border-radius:6px;padding:7px 9px;font-family:var(--sans);font-size:13.5px;}
+  .panel{background:var(--dirt-medium);border:1px solid var(--dirt-border);border-radius:10px;margin-top:14px;overflow:hidden;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;border-bottom:1px solid var(--dirt-border);background:var(--dirt-light);}
+  .panel-title{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--pink);}
+  textarea{width:100%;min-height:260px;background:var(--dirt-medium);color:var(--text-main);border:none;outline:none;font-family:var(--mono);font-size:13px;line-height:1.6;padding:14px;resize:vertical;}
+  #inputs{min-height:70px;}
+  .runbar{display:flex;gap:10px;padding:11px 13px;border-top:1px solid var(--dirt-border);background:var(--dirt-light);align-items:center;flex-wrap:wrap;}
+  button.run{background:var(--pink);color:#2a0f18;border:none;border-radius:7px;font-weight:700;font-size:14px;padding:9px 18px;cursor:pointer;}
+  button.run:active{transform:scale(.97);}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--text-dim);}
+  #console{min-height:220px;max-height:420px;overflow-y:auto;padding:14px 16px;font-family:var(--mono);font-size:13px;line-height:1.7;}
+  .line{margin:0 0 5px;white-space:pre-wrap;word-break:break-word;}
+  .line.out{color:var(--text-main);}
+  .line.dbg{color:var(--text-dim);font-style:italic;}
+  .line.err{color:#ff8f8f;}
+  .empty{color:var(--text-dim);font-style:italic;padding:6px 0;}
+  footer{text-align:center;color:var(--text-dim);font-family:var(--mono);font-size:11px;margin-top:30px;opacity:.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 380 300" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="pb" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffb3c7"/><stop offset="100%" stop-color="#ff8fae"/></linearGradient></defs>
+      <rect x="0" y="230" width="380" height="70" fill="#2d1f14"/>
+      <ellipse cx="60" cy="232" rx="34" ry="10" fill="#3d2b1c"/><ellipse cx="150" cy="235" rx="26" ry="8" fill="#3d2b1c"/>
+      <ellipse cx="300" cy="233" rx="30" ry="9" fill="#3d2b1c"/><ellipse cx="230" cy="238" rx="18" ry="6" fill="#3d2b1c"/>
+      <g><rect x="315" y="205" width="6" height="30" rx="3" fill="#6b9c5a"/><ellipse cx="311" cy="205" rx="11" ry="6" fill="#7ec36a" transform="rotate(-25 311 205)"/><ellipse cx="325" cy="200" rx="11" ry="6" fill="#8fd47a" transform="rotate(20 325 200)"/></g>
+      <g><ellipse cx="120" cy="215" rx="26" ry="22" fill="url(#pb)" stroke="#e0708f" stroke-width="1.5"/><ellipse cx="155" cy="195" rx="26" ry="22" fill="url(#pb)" stroke="#e0708f" stroke-width="1.5"/><ellipse cx="180" cy="160" rx="26" ry="24" fill="url(#pb)" stroke="#e0708f" stroke-width="1.5"/><ellipse cx="180" cy="120" rx="26" ry="24" fill="url(#pb)" stroke="#e0708f" stroke-width="1.5"/><ellipse cx="155" cy="90" rx="27" ry="25" fill="url(#pb)" stroke="#e0708f" stroke-width="1.5"/>
+      <line x1="120" y1="207" x2="120" y2="223" stroke="#e0708f" stroke-width="1.5"/><line x1="155" y1="187" x2="155" y2="203" stroke="#e0708f" stroke-width="1.5"/><line x1="180" y1="146" x2="180" y2="174" stroke="#e0708f" stroke-width="1.5"/><line x1="180" y1="106" x2="180" y2="134" stroke="#e0708f" stroke-width="1.5"/>
+      <circle cx="145" cy="82" r="4" fill="#3a2436"/><circle cx="167" cy="82" r="4" fill="#3a2436"/><circle cx="146.5" cy="80.5" r="1.3" fill="#fff"/><circle cx="168.5" cy="80.5" r="1.3" fill="#fff"/>
+      <path d="M148 96 Q156 102 164 96" fill="none" stroke="#3a2436" stroke-width="2" stroke-linecap="round"/><circle cx="132" cy="92" r="5" fill="#ff6f96" opacity="0.55"/><circle cx="180" cy="92" r="5" fill="#ff6f96" opacity="0.55"/></g>
+    </svg>
+    <h1>Placebo</h1>
+    <p class="tag">Understand what you're doing, not how it works.</p>
+  </header>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Code</span>
+      <select id="examplePicker">
+        <option value="">— load an example —</option>
+        <option value="hello">Hello world</option>
+        <option value="oracle">The Oracle</option>
+        <option value="gol">Game of Life</option>
+      </select>
+    </div>
+    <textarea id="code" spellcheck="false"></textarea>
+    <div class="runbar">
+      <button class="run" id="runBtn">▶ Run</button>
+      <span class="hint" id="statusText">idle</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Program input (one answer per line, for input())</span></div>
+    <textarea id="inputs" spellcheck="false" placeholder="Ada&#10;blue&#10;6&#10;7&#10;spider"></textarea>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Console</span></div>
+    <div id="console"><div class="empty">Run something to see it here.</div></div>
+  </div>
+
+  <footer>🪱 placebo — grown in the dirt, ready to build</footer>
+</div>
+<script>
+// ============================================================
+// PLACEBO ENGINE — lexer, parser, tree-walking interpreter
+// Portable JS: no DOM, no browser globals. Same file runs in
+// Node (tested here) and later in a browser artifact unchanged.
+// ============================================================
+
+const KEYWORDS = new Set([
+  'store','output','print','if','else','loop','function','return',
+  'true','false','and','or','not','error','try','catch','stop','skip',
+  'load','lambda','to','each','in','while','equal','empty','null','comment','end'
+]);
+
+// ---------------- LEXER ----------------
+
+function lex(source) {
+  const tokens = [];
+  let i = 0, line = 1;
+  let bracketDepth = 0;
+  const n = source.length;
+
+  function peekChar(o = 0) { return source[i + o]; }
+
+  while (i < n) {
+    const ch = source[i];
+
+    if (ch === '\n') {
+      line++;
+      i++;
+      if (bracketDepth === 0) {
+        // collapse consecutive EOLs
+        if (tokens.length && tokens[tokens.length - 1].type !== 'EOL') {
+          tokens.push({ type: 'EOL', line });
+        }
+      }
+      continue;
+    }
+    if (ch === ' ' || ch === '\t' || ch === '\r') { i++; continue; }
+
+    if (ch === '#') {
+      while (i < n && source[i] !== '\n') i++;
+      continue;
+    }
+
+    if (ch.match(/[0-9]/)) {
+      let start = i;
+      while (i < n && /[0-9]/.test(source[i])) i++;
+      if (source[i] === '.' && /[0-9]/.test(source[i + 1] || '')) {
+        i++;
+        while (i < n && /[0-9]/.test(source[i])) i++;
+      }
+      tokens.push({ type: 'NUMBER', value: parseFloat(source.slice(start, i)), line });
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      i++;
+      let start = i;
+      let buf = '';
+      while (i < n && source[i] !== quote) {
+        if (source[i] === '\n') line++;
+        buf += source[i];
+        i++;
+      }
+      i++; // closing quote
+      tokens.push({ type: 'STRING', value: buf, line });
+      continue;
+    }
+
+    if (/[a-zA-Z_]/.test(ch)) {
+      let start = i;
+      while (i < n && /[a-zA-Z0-9_]/.test(source[i])) i++;
+      const raw = source.slice(start, i);
+      const lower = raw.toLowerCase();
+      if (lower === 'comment') {
+        // single-line comment keyword: skip rest of physical line
+        while (i < n && source[i] !== '\n') i++;
+        continue;
+      }
+      if (KEYWORDS.has(lower)) {
+        tokens.push({ type: 'KEYWORD', value: lower, line });
+      } else {
+        tokens.push({ type: 'IDENTIFIER', value: lower, line });
+      }
+      continue;
+    }
+
+    if (ch === '=' && source[i + 1] === '=') { tokens.push({ type: 'EQEQ', line }); i += 2; continue; }
+    if (ch === '!' && source[i + 1] === '=') { tokens.push({ type: 'NEQ', line }); i += 2; continue; }
+    if (ch === '<' && source[i + 1] === '=') { tokens.push({ type: 'LTE', line }); i += 2; continue; }
+    if (ch === '>' && source[i + 1] === '=') { tokens.push({ type: 'GTE', line }); i += 2; continue; }
+    if (ch === '<') { tokens.push({ type: 'LT', line }); i++; continue; }
+    if (ch === '>') { tokens.push({ type: 'GT', line }); i++; continue; }
+    if (ch === '=') { tokens.push({ type: 'EQ', line }); i++; continue; }
+    if (ch === '+') { tokens.push({ type: 'PLUS', line }); i++; continue; }
+    if (ch === '-') { tokens.push({ type: 'MINUS', line }); i++; continue; }
+    if (ch === '*') { tokens.push({ type: 'STAR', line }); i++; continue; }
+    if (ch === '/') { tokens.push({ type: 'SLASH', line }); i++; continue; }
+    if (ch === '%') { tokens.push({ type: 'PERCENT', line }); i++; continue; }
+    if (ch === '(') { tokens.push({ type: 'LPAREN', line }); bracketDepth++; i++; continue; }
+    if (ch === ')') { tokens.push({ type: 'RPAREN', line }); bracketDepth = Math.max(0, bracketDepth - 1); i++; continue; }
+    if (ch === '[') { tokens.push({ type: 'LBRACKET', line }); bracketDepth++; i++; continue; }
+    if (ch === ']') { tokens.push({ type: 'RBRACKET', line }); bracketDepth = Math.max(0, bracketDepth - 1); i++; continue; }
+    if (ch === ':') { tokens.push({ type: 'COLON', line }); i++; continue; }
+    if (ch === ',') { tokens.push({ type: 'COMMA', line }); i++; continue; }
+    if (ch === '.') { tokens.push({ type: 'DOT', line }); i++; continue; }
+
+    throw new PlaceboError(`Unrecognized character '${ch}'`, line);
+  }
+  if (tokens.length && tokens[tokens.length - 1].type !== 'EOL') tokens.push({ type: 'EOL', line });
+  tokens.push({ type: 'EOF', line });
+  return tokens;
+}
+
+class PlaceboError extends Error {
+  constructor(message, line) {
+    super(line ? `Error on line ${line}: ${message}` : `Error: ${message}`);
+    this.placeboLine = line;
+  }
+}
+
+// ---------------- PARSER ----------------
+
+class Parser {
+  constructor(tokens) { this.tokens = tokens; this.pos = 0; }
+  cur() { return this.tokens[this.pos]; }
+  at(type, value) {
+    const t = this.cur();
+    if (t.type !== type) return false;
+    if (value !== undefined && t.value !== value) return false;
+    return true;
+  }
+  advance() { return this.tokens[this.pos++]; }
+  expect(type, value) {
+    if (!this.at(type, value)) {
+      const t = this.cur();
+      throw new PlaceboError(`Expected ${value || type}, got '${t.value !== undefined ? t.value : t.type}'`, t.line);
+    }
+    return this.advance();
+  }
+  skipEol() { while (this.at('EOL')) this.advance(); }
+
+  parseProgram() {
+    const stmts = [];
+    this.skipEol();
+    while (!this.at('EOF')) {
+      stmts.push(this.parseStatement());
+      this.skipEol();
+    }
+    return { type: 'Program', body: stmts };
+  }
+
+  parseBlockUntilEnd() {
+    const stmts = [];
+    this.skipEol();
+    while (!(this.at('KEYWORD', 'end') || this.at('EOF'))) {
+      stmts.push(this.parseStatement());
+      this.skipEol();
+    }
+    this.expect('KEYWORD', 'end');
+    return stmts;
+  }
+
+  // parse an if/else-if/else chain body: statements until we hit
+  // 'else', 'end', or EOF (else is handled by the caller)
+  parseIfBodyUntil() {
+    const stmts = [];
+    this.skipEol();
+    while (!(this.at('KEYWORD', 'else') || this.at('KEYWORD', 'end') || this.at('EOF'))) {
+      stmts.push(this.parseStatement());
+      this.skipEol();
+    }
+    return stmts;
+  }
+
+  parseStatement() {
+    const t = this.cur();
+    if (t.type === 'KEYWORD') {
+      switch (t.value) {
+        case 'store': return this.parseStore();
+        case 'output': return this.advanceKw(), { type: 'Output', args: this.parseArgList(), line: t.line };
+        case 'print': return this.advanceKw(), { type: 'Print', args: this.parseArgList(), line: t.line };
+        case 'if': return this.parseIf();
+        case 'loop': return this.parseLoop();
+        case 'function': return this.parseFunction();
+        case 'return': return this.parseReturn();
+        case 'error': return this.advanceKw(), { type: 'ErrorStmt', expr: this.parseExpression(), line: t.line };
+        case 'try': return this.parseTry();
+        case 'stop': return this.advanceKw(), { type: 'Stop', line: t.line };
+        case 'skip': return this.advanceKw(), { type: 'Skip', line: t.line };
+        case 'load': return this.parseLoad();
+      }
+    }
+    return this.parseExprStatement();
+  }
+  advanceKw() { this.advance(); }
+
+  parseArgList() {
+    // comma-separated expressions on the same logical line
+    const args = [this.parseExpression()];
+    while (this.at('COMMA')) { this.advance(); args.push(this.parseExpression()); }
+    return args;
+  }
+
+  parseStore() {
+    const line = this.cur().line;
+    this.advance(); // store
+    const targets = [this.expect('IDENTIFIER').value];
+    while (this.at('COMMA')) { this.advance(); targets.push(this.expect('IDENTIFIER').value); }
+    let value = null;
+    if (this.at('EQ')) { this.advance(); value = this.parseAssignRHS(); }
+    return { type: 'Store', targets, value, line };
+  }
+
+  // supports `store a, b = f()` where RHS may be multiple comma exprs too
+  parseAssignRHS() {
+    const first = this.parseExpression();
+    if (this.at('COMMA')) {
+      const values = [first];
+      while (this.at('COMMA')) { this.advance(); values.push(this.parseExpression()); }
+      return { type: 'ExprList', values };
+    }
+    return first;
+  }
+
+  parseIf() {
+    const line = this.cur().line;
+    this.advance(); // if
+    const cond = this.parseExpression();
+    const body = this.parseIfBodyUntil();
+    let elseBranch = null;
+    if (this.at('KEYWORD', 'else')) {
+      this.advance();
+      if (this.at('KEYWORD', 'if')) {
+        elseBranch = [this.parseIf()];
+      } else {
+        elseBranch = this.parseIfBodyUntil();
+        this.expect('KEYWORD', 'end');
+      }
+    } else {
+      this.expect('KEYWORD', 'end');
+    }
+    return { type: 'If', cond, body, elseBranch, line };
+  }
+
+  parseLoop() {
+    const line = this.cur().line;
+    this.advance(); // loop
+    if (this.at('KEYWORD', 'while')) {
+      this.advance();
+      const cond = this.parseExpression();
+      const body = this.parseBlockUntilEnd();
+      return { type: 'LoopWhile', cond, body, line };
+    }
+    if (this.at('KEYWORD', 'each')) {
+      this.advance();
+      const name1 = this.expect('IDENTIFIER').value;
+      let name2 = null;
+      if (this.at('COMMA')) { this.advance(); name2 = this.expect('IDENTIFIER').value; }
+      this.expect('KEYWORD', 'in');
+      const iter = this.parseExpression();
+      const body = this.parseBlockUntilEnd();
+      return { type: 'LoopEach', name1, name2, iter, body, line };
+    }
+    // either `loop N times` or `loop A to B`
+    const first = this.parseExpression();
+    if (this.at('IDENTIFIER', 'times')) {
+      this.advance();
+      const body = this.parseBlockUntilEnd();
+      return { type: 'LoopTimes', count: first, body, line };
+    }
+    if (this.at('KEYWORD', 'to')) {
+      this.advance();
+      const end = this.parseExpression();
+      const body = this.parseBlockUntilEnd();
+      return { type: 'LoopRange', start: first, end, body, line };
+    }
+    throw new PlaceboError('Invalid loop form', line);
+  }
+
+  parseFunction() {
+    const line = this.cur().line;
+    this.advance(); // function
+    const name = this.expect('IDENTIFIER').value;
+    let params = [];
+    if (this.at('LPAREN')) {
+      this.advance();
+      if (!this.at('RPAREN')) {
+        params.push(this.expect('IDENTIFIER').value);
+        while (this.at('COMMA')) { this.advance(); params.push(this.expect('IDENTIFIER').value); }
+      }
+      this.expect('RPAREN');
+    }
+    const body = this.parseBlockUntilEnd();
+    return { type: 'FunctionDecl', name, params, body, line };
+  }
+
+  parseReturn() {
+    const line = this.cur().line;
+    this.advance();
+    if (this.at('EOL') || this.at('EOF') || this.at('KEYWORD', 'end')) {
+      return { type: 'Return', values: [], line };
+    }
+    const values = [this.parseExpression()];
+    while (this.at('COMMA')) { this.advance(); values.push(this.parseExpression()); }
+    return { type: 'Return', values, line };
+  }
+
+  parseTry() {
+    const line = this.cur().line;
+    this.advance(); // try
+    const body = [];
+    this.skipEol();
+    while (!(this.at('KEYWORD', 'catch') || this.at('EOF'))) {
+      body.push(this.parseStatement());
+      this.skipEol();
+    }
+    this.expect('KEYWORD', 'catch');
+    let errName = null;
+    if (this.at('IDENTIFIER')) errName = this.advance().value;
+    const catchBody = this.parseBlockUntilEnd();
+    return { type: 'Try', body, errName, catchBody, line };
+  }
+
+  parseLoad() {
+    const line = this.cur().line;
+    this.advance();
+    const path = this.expect('STRING').value;
+    return { type: 'Load', path, line };
+  }
+
+  parseExprStatement() {
+    const line = this.cur().line;
+    // bare `catch` inside a body shouldn't reach here; guard elsewhere
+    const expr = this.parseExpression();
+    if (this.at('KEYWORD', 'to')) {
+      this.advance();
+      const target = this.parseExpression();
+      return { type: 'ToMutation', value: expr, target, line };
+    }
+    if (this.at('EQ')) {
+      this.advance();
+      const value = this.parseAssignRHS();
+      return { type: 'Assign', target: expr, value, line };
+    }
+    if (expr.type === 'BinaryOp' && expr.op === '+') {
+      return { type: 'PlusMutation', target: expr.left, value: expr.right, line };
+    }
+    return { type: 'ExprStatement', expr, line };
+  }
+
+  // ---------- expressions (precedence climbing) ----------
+  parseExpression() { return this.parseOr(); }
+
+  parseOr() {
+    let left = this.parseAnd();
+    while (this.at('KEYWORD', 'or')) { this.advance(); left = { type: 'BinaryOp', op: 'or', left, right: this.parseAnd() }; }
+    return left;
+  }
+  parseAnd() {
+    let left = this.parseNot();
+    while (this.at('KEYWORD', 'and')) { this.advance(); left = { type: 'BinaryOp', op: 'and', left, right: this.parseNot() }; }
+    return left;
+  }
+  parseNot() {
+    if (this.at('KEYWORD', 'not')) { this.advance(); return { type: 'UnaryOp', op: 'not', expr: this.parseNot() }; }
+    return this.parseEquality();
+  }
+  parseEquality() {
+    let left = this.parseRelational();
+    while (this.at('EQEQ') || this.at('NEQ') || this.at('KEYWORD', 'equal')) {
+      const t = this.advance();
+      const op = t.type === 'EQEQ' || t.value === 'equal' ? '==' : '!=';
+      left = { type: 'BinaryOp', op, left, right: this.parseRelational() };
+    }
+    return left;
+  }
+  parseRelational() {
+    let left = this.parseAdditive();
+    while (this.at('LT') || this.at('GT') || this.at('LTE') || this.at('GTE')) {
+      const t = this.advance();
+      const op = { LT: '<', GT: '>', LTE: '<=', GTE: '>=' }[t.type];
+      left = { type: 'BinaryOp', op, left, right: this.parseAdditive() };
+    }
+    return left;
+  }
+  parseAdditive() {
+    let left = this.parseMultiplicative();
+    while (this.at('PLUS') || this.at('MINUS')) {
+      const t = this.advance();
+      const op = t.type === 'PLUS' ? '+' : '-';
+      left = { type: 'BinaryOp', op, left, right: this.parseMultiplicative() };
+    }
+    return left;
+  }
+  parseMultiplicative() {
+    let left = this.parseUnary();
+    while (this.at('STAR') || this.at('SLASH') || this.at('PERCENT')) {
+      const t = this.advance();
+      const op = t.type === 'STAR' ? '*' : t.type === 'SLASH' ? '/' : '%';
+      left = { type: 'BinaryOp', op, left, right: this.parseUnary() };
+    }
+    return left;
+  }
+  parseUnary() {
+    if (this.at('MINUS')) { this.advance(); return { type: 'UnaryOp', op: '-', expr: this.parseUnary() }; }
+    return this.parsePostfix();
+  }
+  parsePostfix() {
+    let expr = this.parsePrimary();
+    for (;;) {
+      if (this.at('LBRACKET')) {
+        this.advance();
+        const idx = this.parseExpression();
+        this.expect('RBRACKET');
+        expr = { type: 'Index', target: expr, index: idx };
+      } else if (this.at('LPAREN')) {
+        this.advance();
+        const args = [];
+        if (!this.at('RPAREN')) {
+          args.push(this.parseExpression());
+          while (this.at('COMMA')) { this.advance(); args.push(this.parseExpression()); }
+        }
+        this.expect('RPAREN');
+        expr = { type: 'Call', callee: expr, args };
+      } else if (this.at('IDENTIFIER') && this.isDotLikeMember()) {
+        // namespaced access: module.func — handled via '.' below
+        break;
+      } else {
+        break;
+      }
+    }
+    return expr;
+  }
+  isDotLikeMember() { return false; } // placeholder, dot handled in lexer-free style below
+
+  parsePrimary() {
+    const t = this.cur();
+    if (t.type === 'NUMBER') { this.advance(); return { type: 'Number', value: t.value }; }
+    if (t.type === 'STRING') { this.advance(); return { type: 'Str', value: t.value }; }
+    if (t.type === 'KEYWORD' && t.value === 'true') { this.advance(); return { type: 'Bool', value: true }; }
+    if (t.type === 'KEYWORD' && t.value === 'false') { this.advance(); return { type: 'Bool', value: false }; }
+    if (t.type === 'KEYWORD' && t.value === 'empty') { this.advance(); return { type: 'Empty' }; }
+    if (t.type === 'KEYWORD' && t.value === 'null') { this.advance(); return { type: 'Null' }; }
+    if (t.type === 'KEYWORD' && t.value === 'lambda') { return this.parseLambda(); }
+    if (t.type === 'LPAREN') { this.advance(); const e = this.parseExpression(); this.expect('RPAREN'); return e; }
+    if (t.type === 'LBRACKET') { return this.parseListOrDict(); }
+    if (t.type === 'IDENTIFIER') {
+      this.advance();
+      let node = { type: 'Identifier', name: t.value };
+      // module.member access
+      while (this.atDot()) {
+        this.consumeDot();
+        const member = this.expect('IDENTIFIER').value;
+        node = { type: 'Member', target: node, name: member };
+      }
+      return node;
+    }
+    throw new PlaceboError(`Unexpected token '${t.value !== undefined ? t.value : t.type}'`, t.line);
+  }
+  atDot() { return this.at('DOT'); }
+  consumeDot() { this.advance(); }
+
+  parseLambda() {
+    const line = this.cur().line;
+    this.advance(); // lambda
+    let params = [];
+    this.expect('LPAREN');
+    if (!this.at('RPAREN')) {
+      params.push(this.expect('IDENTIFIER').value);
+      while (this.at('COMMA')) { this.advance(); params.push(this.expect('IDENTIFIER').value); }
+    }
+    this.expect('RPAREN');
+    const body = this.parseBlockUntilEnd();
+    return { type: 'Lambda', params, body, line };
+  }
+
+  parseListOrDict() {
+    this.advance(); // [
+    if (this.at('COLON') && this.tokens[this.pos + 1].type === 'RBRACKET') {
+      this.advance(); this.advance();
+      return { type: 'DictLit', pairs: [] };
+    }
+    if (this.at('RBRACKET')) { this.advance(); return { type: 'ListLit', items: [] }; }
+
+    this.skipEol();
+    const firstKey = this.parseDictKeyOrExpr();
+    this.skipEol();
+    if (this.at('COLON')) {
+      this.advance();
+      this.skipEol();
+      const firstVal = this.parseExpression();
+      const pairs = [{ key: firstKey.key, value: firstVal }];
+      this.skipEol();
+      while (this.at('COMMA')) {
+        this.advance(); this.skipEol();
+        const k = this.parseDictKeyOrExpr();
+        this.skipEol();
+        this.expect('COLON');
+        this.skipEol();
+        const v = this.parseExpression();
+        pairs.push({ key: k.key, value: v });
+        this.skipEol();
+      }
+      this.skipEol();
+      this.expect('RBRACKET');
+      return { type: 'DictLit', pairs };
+    }
+    // it's a list
+    const items = [firstKey.__expr || firstKey];
+    this.skipEol();
+    while (this.at('COMMA')) {
+      this.advance(); this.skipEol();
+      items.push(this.parseExpression());
+      this.skipEol();
+    }
+    this.skipEol();
+    this.expect('RBRACKET');
+    return { type: 'ListLit', items };
+  }
+
+  // In a dict literal, a bare identifier immediately before ':' is a
+  // LITERAL STRING KEY, never a variable lookup. Locked design rule.
+  parseDictKeyOrExpr() {
+    if (this.at('IDENTIFIER') && this.tokens[this.pos + 1].type === 'COLON') {
+      const name = this.advance().value;
+      return { key: { type: 'Str', value: name }, __expr: { type: 'Identifier', name } };
+    }
+    const expr = this.parseExpression();
+    return { key: expr, __expr: expr };
+  }
+}
+
+// parseDictKeyOrExpr returns {key, __expr}; fix usages: firstKey.key is the dict key node
+// (adjust call sites)
+
+// ---------------- RUNTIME VALUES ----------------
+
+class PlaceboFunction {
+  constructor(name, params, body, closureEnv) {
+    this.name = name; this.params = params; this.body = body; this.closureEnv = closureEnv;
+  }
+}
+class MultiValue { constructor(values) { this.values = values; } }
+class BreakSignal {}
+class SkipSignal {}
+class ReturnSignal { constructor(value) { this.value = value; } }
+
+class Environment {
+  constructor(parent = null) { this.vars = new Map(); this.parent = parent; }
+  define(name, value) { this.vars.set(name, value); }
+  get(name) {
+    let env = this;
+    while (env) { if (env.vars.has(name)) return env.vars.get(name); env = env.parent; }
+    throw new PlaceboError(`${name} has no value`);
+  }
+  has(name) {
+    let env = this;
+    while (env) { if (env.vars.has(name)) return true; env = env.parent; }
+    return false;
+  }
+  set(name, value) {
+    let env = this;
+    while (env) { if (env.vars.has(name)) { env.vars.set(name, value); return; } env = env.parent; }
+    throw new PlaceboError(`${name} has no value`);
+  }
+}
+
+// ---------------- INTERPRETER ----------------
+
+class Interpreter {
+  constructor(host) {
+    this.global = new Environment();
+    this.host = host || {};
+    this.output = [];
+    this.debug = [];
+    this.installBuiltins();
+  }
+
+  run(source) {
+    const tokens = lex(source);
+    const parser = new Parser(tokens);
+    const program = parser.parseProgram();
+    for (const stmt of program.body) this.execStatement(stmt, this.global);
+  }
+
+  installBuiltins() {
+    const B = (fn) => fn;
+    const g = this.global;
+    g.define('length', B((args) => {
+      const x = args[0];
+      if (typeof x === 'string' || Array.isArray(x)) return x.length;
+      if (x instanceof Map) return x.size;
+      return 0;
+    }));
+    g.define('type', B((args) => {
+      const x = args[0];
+      if (x === null || x === undefined) return 'null';
+      if (x === PLACEBO_EMPTY) return 'empty';
+      if (typeof x === 'number') return 'number';
+      if (typeof x === 'string') return 'text';
+      if (typeof x === 'boolean') return 'boolean';
+      if (Array.isArray(x)) return 'list';
+      if (x instanceof Map) return 'dictionary';
+      if (x instanceof PlaceboFunction || typeof x === 'function') return 'function';
+      return 'null';
+    }));
+    g.define('random', B((args) => Math.floor(Math.random() * (args[1] - args[0] + 1)) + args[0]));
+    g.define('down', B((args) => Math.floor(args[0])));
+    g.define('up', B((args) => Math.ceil(args[0])));
+    g.define('min', B((args) => args.reduce((a, b) => (b < a ? b : a))));
+    g.define('max', B((args) => args.reduce((a, b) => (b > a ? b : a))));
+    g.define('number', B((args) => {
+      const s = String(args[0]);
+      return s.indexOf('.') !== -1 ? parseFloat(s) : parseInt(s, 10);
+    }));
+    g.define('text', B((args) => stringify(args[0])));
+    g.define('range', B((args) => {
+      const [start, end] = args;
+      const out = [];
+      for (let v = start; v < end; v++) out.push(v);
+      return out;
+    }));
+    g.define('input', B((args) => {
+      const prompt = args[0] || '';
+      if (this.host.input) return this.host.input(prompt);
+      return '';
+    }));
+    g.define('reverse', B((args) => {
+      const x = args[0];
+      if (typeof x === 'string') return x.split('').reverse().join('');
+      if (Array.isArray(x)) return x.slice().reverse();
+      return x;
+    }));
+    g.define('split', B((args) => String(args[0]).split(args[1])));
+    g.define('remove', B((args) => {
+      const [list, idx] = args;
+      const i = idx < 0 ? list.length + idx : idx;
+      return list.splice(i, 1)[0];
+    }));
+    g.define('has', B((args) => {
+      const [coll, val] = args;
+      if (Array.isArray(coll)) return coll.some((v) => placeboEquals(v, val));
+      if (coll instanceof Map) return coll.has(dictKey(val));
+      return false;
+    }));
+    g.define('read', B((args) => (this.host.read ? this.host.read(args[0]) : null)));
+    g.define('write', B((args) => (this.host.write ? this.host.write(args[0], args[1]) : null)));
+    g.define('append', B((args) => (this.host.append ? this.host.append(args[0], args[1]) : null)));
+    g.define('exists', B((args) => (this.host.exists ? this.host.exists(args[0]) : false)));
+    g.define('fetch', B((args) => {
+      if (this.host.fetch) return this.host.fetch(args[0], args[1]);
+      throw new PlaceboError('fetch is not available in this host');
+    }));
+  }
+
+  // ---------- statements ----------
+  execStatement(node, env) {
+    switch (node.type) {
+      case 'Store': return this.execStore(node, env);
+      case 'Output': {
+        const vals = node.args.map((a) => this.eval(a, env));
+        this.output.push(vals.map(stringify).join(' '));
+        return;
+      }
+      case 'Print': {
+        const vals = node.args.map((a) => this.eval(a, env));
+        this.debug.push(vals.map(stringify).join(' '));
+        return;
+      }
+      case 'If': {
+        if (truthy(this.eval(node.cond, env))) {
+          this.execBlock(node.body, env);
+        } else if (node.elseBranch) {
+          this.execBlock(node.elseBranch, env);
+        }
+        return;
+      }
+      case 'LoopTimes': {
+        const count = this.eval(node.count, env);
+        for (let i = 0; i < count; i++) {
+          try { this.execBlock(node.body, env); } catch (e) {
+            if (e instanceof BreakSignal) break;
+            if (e instanceof SkipSignal) continue;
+            throw e;
+          }
+        }
+        return;
+      }
+      case 'LoopWhile': {
+        while (truthy(this.eval(node.cond, env))) {
+          try { this.execBlock(node.body, env); } catch (e) {
+            if (e instanceof BreakSignal) break;
+            if (e instanceof SkipSignal) continue;
+            throw e;
+          }
+        }
+        return;
+      }
+      case 'LoopRange': {
+        const start = this.eval(node.start, env);
+        const end = this.eval(node.end, env);
+        for (let i = start; i < end; i++) {
+          try { this.execBlock(node.body, env); } catch (e) {
+            if (e instanceof BreakSignal) break;
+            if (e instanceof SkipSignal) continue;
+            throw e;
+          }
+        }
+        return;
+      }
+      case 'LoopEach': {
+        const iter = this.eval(node.iter, env);
+        const entries = Array.isArray(iter)
+          ? iter.map((v) => [v, null])
+          : iter instanceof Map
+          ? Array.from(iter.entries())
+          : [];
+        for (const [a, b] of entries) {
+          // The loop variable binds in the SAME scope the loop runs in
+          // (not a fresh child scope) — otherwise `store total = total + n`
+          // inside the loop would shadow the outer accumulator every
+          // iteration instead of updating it. Matches how every
+          // mainstream language's for-loop actually behaves.
+          if (node.name2 !== null) { env.define(node.name1, a); env.define(node.name2, b); }
+          else { env.define(node.name1, a); }
+          try { this.execBlock(node.body, env); } catch (e) {
+            if (e instanceof BreakSignal) break;
+            if (e instanceof SkipSignal) continue;
+            throw e;
+          }
+        }
+        return;
+      }
+      case 'FunctionDecl': {
+        env.define(node.name, new PlaceboFunction(node.name, node.params, node.body, env));
+        return;
+      }
+      case 'Return': {
+        if (node.values.length === 0) throw new ReturnSignal(null);
+        if (node.values.length === 1) throw new ReturnSignal(this.eval(node.values[0], env));
+        throw new ReturnSignal(new MultiValue(node.values.map((v) => this.eval(v, env))));
+      }
+      case 'ErrorStmt': {
+        const msg = this.eval(node.expr, env);
+        throw new PlaceboError(stringify(msg), node.line);
+      }
+      case 'Try': {
+        try {
+          this.execBlock(node.body, env);
+        } catch (e) {
+          if (e instanceof BreakSignal || e instanceof SkipSignal || e instanceof ReturnSignal) throw e;
+          const catchEnv = new Environment(env);
+          if (node.errName) catchEnv.define(node.errName, e.message || String(e));
+          this.execBlock(node.catchBody, catchEnv);
+        }
+        return;
+      }
+      case 'Stop': throw new BreakSignal();
+      case 'Skip': throw new SkipSignal();
+      case 'Load': {
+        if (this.host.load) this.host.load(node.path, this);
+        return;
+      }
+      case 'Assign': {
+        const value = node.value.type === 'ExprList'
+          ? new MultiValue(node.value.values.map((v) => this.eval(v, env)))
+          : this.eval(node.value, env);
+        this.assignTo(node.target, value, env);
+        return;
+      }
+      case 'PlusMutation': {
+        const target = this.eval(node.target, env);
+        const value = this.eval(node.value, env);
+        this.mutatePlus(target, value);
+        return;
+      }
+      case 'ToMutation': {
+        const value = this.eval(node.value, env);
+        const target = this.eval(node.target, env);
+        this.mutatePlus(target, value);
+        return;
+      }
+      case 'ExprStatement': {
+        if (node.expr.type === 'Identifier') {
+          const val = this.eval(node.expr, env);
+          if (val instanceof PlaceboFunction) { this.callFunction(val, []); return; }
+          return;
+        }
+        this.eval(node.expr, env);
+        return;
+      }
+      default:
+        throw new PlaceboError(`Unknown statement ${node.type}`);
+    }
+  }
+
+  mutatePlus(target, value) {
+    if (Array.isArray(target)) {
+      // Always append value as a single new element — even when value
+      // is itself a list (e.g. `board + [x, y]` adds one [x,y] point).
+      // Nothing in the spec shows list+list meaning "concatenate".
+      target.push(value);
+      return;
+    }
+    if (target instanceof Map) {
+      if (value instanceof Map) for (const [k, v] of value) target.set(k, v);
+      return;
+    }
+    // non-mutable target: harmless no-op, matches "forgiving" philosophy
+  }
+
+  assignTo(target, value, env) {
+    if (target.type === 'Identifier') { env.set(target.name, value); return; }
+    if (target.type === 'Index') {
+      const base = this.eval(target.target, env);
+      const idxVal = (base instanceof Map && target.index.type === 'Identifier')
+        ? target.index.name
+        : this.eval(target.index, env);
+      if (Array.isArray(base)) {
+        let i = idxVal < 0 ? base.length + idxVal : idxVal;
+        base[i] = value;
+      } else if (base instanceof Map) {
+        base.set(dictKey(idxVal), value);
+      }
+      return;
+    }
+    throw new PlaceboError('Invalid assignment target');
+  }
+
+  execStore(node, env) {
+    let value = null;
+    if (node.value) {
+      value = node.value.type === 'ExprList'
+        ? new MultiValue(node.value.values.map((v) => this.eval(v, env)))
+        : this.eval(node.value, env);
+    }
+    if (node.targets.length === 1) {
+      const v = value instanceof MultiValue ? (value.values.length ? value.values[0] : null) : value;
+      env.define(node.targets[0], v);
+      return;
+    }
+    const values = value instanceof MultiValue ? value.values : [value];
+    node.targets.forEach((name, i) => env.define(name, i < values.length ? values[i] : null));
+  }
+
+  execBlock(stmts, env) {
+    for (const s of stmts) this.execStatement(s, env);
+  }
+
+  // ---------- expressions ----------
+  eval(node, env) {
+    switch (node.type) {
+      case 'Number': return node.value;
+      case 'Str': return interpolate(node.value, env, this);
+      case 'Bool': return node.value;
+      case 'Empty': return PLACEBO_EMPTY;
+      case 'Null': return null;
+      case 'Identifier': return env.get(node.name);
+      case 'ListLit': return node.items.map((it) => this.eval(it, env));
+      case 'DictLit': {
+        const m = new Map();
+        for (const p of node.pairs) m.set(dictKey(this.eval(p.key, env)), this.eval(p.value, env));
+        return m;
+      }
+      case 'Lambda': return new PlaceboFunction('lambda', node.params, node.body, env);
+      case 'Index': {
+        const base = this.eval(node.target, env);
+        // Locked rule: a bare identifier used as a dict index is a
+        // literal string key, same as in dict literals — but only
+        // when the base is actually a dictionary. A list index with
+        // a bare identifier is a variable holding a number, unchanged.
+        const idx = (base instanceof Map && node.index.type === 'Identifier')
+          ? node.index.name
+          : this.eval(node.index, env);
+        if (Array.isArray(base)) {
+          let i = idx < 0 ? base.length + idx : idx;
+          return i >= 0 && i < base.length ? base[i] : null;
+        }
+        if (typeof base === 'string') {
+          let i = idx < 0 ? base.length + idx : idx;
+          return i >= 0 && i < base.length ? base[i] : null;
+        }
+        if (base instanceof Map) {
+          const k = dictKey(idx);
+          return base.has(k) ? base.get(k) : null;
+        }
+        return null;
+      }
+      case 'Member': {
+        const base = this.eval(node.target, env);
+        if (base && typeof base === 'object' && base.__module) return base[node.name];
+        return null;
+      }
+      case 'Call': {
+        const fn = this.eval(node.callee, env);
+        const args = node.args.map((a) => this.eval(a, env));
+        return this.callFunction(fn, args);
+      }
+      case 'UnaryOp': {
+        if (node.op === 'not') return !truthy(this.eval(node.expr, env));
+        if (node.op === '-') return -this.eval(node.expr, env);
+        break;
+      }
+      case 'BinaryOp': return this.evalBinary(node, env);
+      default:
+        throw new PlaceboError(`Unknown expression ${node.type}`);
+    }
+  }
+
+  evalBinary(node, env) {
+    if (node.op === 'and') return truthy(this.eval(node.left, env)) ? truthy(this.eval(node.right, env)) : false;
+    if (node.op === 'or') return truthy(this.eval(node.left, env)) ? true : truthy(this.eval(node.right, env));
+    const l = this.eval(node.left, env);
+    const r = this.eval(node.right, env);
+    switch (node.op) {
+      case '+':
+        if (typeof l === 'string' || typeof r === 'string') return stringify(l) + stringify(r);
+        if (Array.isArray(l)) return l.concat([r]);
+        return l + r;
+      case '-': return l - r;
+      case '*':
+        if (typeof l === 'string') return l.repeat(r);
+        if (Array.isArray(l)) { let out = []; for (let i = 0; i < r; i++) out = out.concat(l); return out; }
+        return l * r;
+      case '/': return l / r;
+      case '%': return l % r;
+      case '==': return placeboEquals(l, r);
+      case '!=': return !placeboEquals(l, r);
+      case '<': return l < r;
+      case '>': return l > r;
+      case '<=': return l <= r;
+      case '>=': return l >= r;
+    }
+  }
+
+  callFunction(fn, args) {
+    if (typeof fn === 'function') return fn(args);
+    if (!(fn instanceof PlaceboFunction)) throw new PlaceboError(`${fn} is not a function`);
+    const callEnv = new Environment(fn.closureEnv);
+    fn.params.forEach((p, i) => callEnv.define(p, i < args.length ? args[i] : null));
+    try {
+      this.execBlock(fn.body, callEnv);
+    } catch (e) {
+      if (e instanceof ReturnSignal) return e.value;
+      throw e;
+    }
+    return null;
+  }
+}
+
+const PLACEBO_EMPTY = Symbol('empty');
+
+function truthy(v) { return v !== null && v !== false && v !== undefined && v !== PLACEBO_EMPTY; }
+
+// Dict keys are stored as raw JS primitives directly — JS Map already
+// distinguishes number keys from string keys natively (SameValueZero),
+// so no custom encoding is needed.
+function dictKey(v) { return v; }
+
+function placeboEquals(a, b) {
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => placeboEquals(v, b[i]));
+  return a === b;
+}
+
+function stringify(v) {
+  if (v === null || v === undefined || v === PLACEBO_EMPTY) return 'null';
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return '[' + v.map(stringify).join(', ') + ']';
+  if (v instanceof Map) {
+    const parts = [];
+    for (const [k, val] of v) parts.push(String(k) + ': ' + stringify(val));
+    return '[' + parts.join(', ') + ']';
+  }
+  if (v instanceof PlaceboFunction) return '<function ' + v.name + '>';
+  return String(v);
+}
+
+function interpolate(str, env, interp) {
+  return str.replace(/\(([a-zA-Z_][a-zA-Z0-9_]*)\)/g, (m, name) => {
+    const key = name.toLowerCase();
+    if (!env.has(key)) return m;
+    return stringify(env.get(key));
+  });
+}
+
+
+// ---------------- HOST BINDINGS (browser) ----------------
+
+const STORAGE_PREFIX = 'placebo:file:';
+
+function makeHost() {
+  let inputQueue = [];
+  let inputIndex = 0;
+
+  return {
+    input(promptText) {
+      const v = inputIndex < inputQueue.length ? inputQueue[inputIndex] : '';
+      inputIndex++;
+      return v;
+    },
+    read(path) {
+      const v = localStorage.getItem(STORAGE_PREFIX + path);
+      return v === null ? null : v;
+    },
+    write(path, content) {
+      localStorage.setItem(STORAGE_PREFIX + path, String(content));
+      return true;
+    },
+    append(path, content) {
+      const existing = localStorage.getItem(STORAGE_PREFIX + path) || '';
+      localStorage.setItem(STORAGE_PREFIX + path, existing + String(content));
+      return true;
+    },
+    exists(path) {
+      return localStorage.getItem(STORAGE_PREFIX + path) !== null;
+    },
+    fetch(url, data) {
+      // Real network call, invisible-async from the Placebo program's
+      // point of view — the interpreter here just calls this and gets
+      // a value back; the promise plumbing is entirely our problem,
+      // not the Placebo programmer's.
+      throw new Error('fetch requires async support — see runAsync below');
+    },
+    setInputQueue(lines) { inputQueue = lines; inputIndex = 0; },
+  };
+}
+
+const host = makeHost();
+const interp = new Interpreter(host);
+
+const consoleEl = document.getElementById('console');
+const statusEl = document.getElementById('statusText');
+const codeEl = document.getElementById('code');
+const inputsEl = document.getElementById('inputs');
+
+function logLine(cls, text) {
+  const d = document.createElement('div');
+  d.className = 'line ' + cls;
+  d.textContent = text;
+  consoleEl.appendChild(d);
+}
+
+function runProgram() {
+  consoleEl.innerHTML = '';
+  const lines = inputsEl.value.split('\n').filter((l) => l.length > 0);
+  host.setInputQueue(lines);
+
+  const fresh = new Interpreter(host);
+  statusEl.textContent = 'running…';
+  try {
+    fresh.run(codeEl.value);
+    fresh.output.forEach((l) => logLine('out', l));
+    if (!fresh.output.length && !fresh.debug.length) logLine('dbg', '(no output)');
+    statusEl.textContent = 'done ✓';
+  } catch (e) {
+    logLine('err', '✗ ' + e.message);
+    statusEl.textContent = 'error ✗';
+  }
+}
+
+document.getElementById('runBtn').addEventListener('click', runProgram);
+
+const EXAMPLES = {
+  hello: `output "Hello, world."
+
+store name = "Ada"
+output "Her name is " + name
+
+store total = 0
+loop each n in [1, 2, 3, 4, 5]
+  store total = total + n
+end
+output "Sum: " + text(total)`,
+
+  oracle: `output "Welcome, seeker. I am the Oracle."
+output "Answer my questions, and I will reveal your true nature."
+output ""
+
+store name = input("What is your name? ")
+store color = input("What color speaks to you most? ")
+store month = input("What month were you born? ")
+store number_answer = input("Think of a number between 1 and 10. What is it? ")
+store animal = input("What animal do you fear most? ")
+
+store name_length = length(name)
+store month_number = number(month)
+store chosen_number = number(number_answer)
+
+store soul_number = (name_length * chosen_number) + month_number
+if soul_number > 100
+  store soul_number = soul_number - 100
+end
+if soul_number < 10
+  store soul_number = soul_number + 10
+end
+
+output ""
+output "The Oracle has spoken, " + name + "."
+output "=============================="
+
+if soul_number < 20
+  store personality = "the Quiet Architect"
+else if soul_number < 40
+  store personality = "the Wandering Dreamer"
+else if soul_number < 60
+  store personality = "the Hidden Flame"
+else if soul_number < 80
+  store personality = "the Ancient Soul"
+else
+  store personality = "the Cosmic Jester"
+end
+
+output "Your true nature is: " + personality
+
+if color == "blue" or color == "Blue"
+  output "You chose the color of depth. You think more than you speak."
+else if color == "red" or color == "Red"
+  output "You chose the color of fire. You feel everything intensely."
+else
+  output "You chose " + color + ". The unusual choice."
+end
+
+store cycle = soul_number % 7
+store season = ""
+if cycle == 0
+  store season = "the Season of Dawn"
+else if cycle == 1
+  store season = "the Season of Rain"
+else
+  store season = "the Season of Stars"
+end
+output "You are entering " + season
+
+store destiny_number = (name_length * chosen_number * month_number) % 12
+store destinies = [
+  "a hidden door will open for you",
+  "someone from your past will return",
+  "a risk will lead to unexpected reward",
+  "you will find something you thought was lost",
+  "a stranger will change your path",
+  "your patience will finally pay off",
+  "a creative idea will demand your attention",
+  "you will be called to lead",
+  "a journey you've been avoiding becomes necessary",
+  "an old habit will break forever",
+  "you will receive news that changes everything",
+  "a quiet opportunity will reveal itself"
+]
+
+output ""
+output "Your destiny: " + destinies[destiny_number]
+output ""
+output "I will be watching."`,
+
+  gol: `function make_board
+  return []
+end
+
+function set_cell(board, x, y, alive)
+  store i = 0
+  loop while i < length(board)
+    if board[i][0] == x and board[i][1] == y
+      remove(board, i)
+      store i = i - 1
+    end
+    store i = i + 1
+  end
+  if alive == true
+    board + [x, y]
+  end
+end
+
+function get_cell(board, x, y)
+  loop each cell in board
+    if cell[0] == x and cell[1] == y
+      return true
+    end
+  end
+  return false
+end
+
+function count_neighbors(board, x, y)
+  store count = 0
+  loop each dx in range(-1, 2)
+    loop each dy in range(-1, 2)
+      if dx == 0 and dy == 0
+        skip
+      end
+      if get_cell(board, x + dx, y + dy) == true
+        store count = count + 1
+      end
+    end
+  end
+  return count
+end
+
+function next_generation(board)
+  store new_board = make_board()
+  store checked = []
+  loop each cell in board
+    store x = cell[0]
+    store y = cell[1]
+    loop each dx in range(-1, 2)
+      loop each dy in range(-1, 2)
+        store check_x = x + dx
+        store check_y = y + dy
+        store already = false
+        loop each pos in checked
+          if pos[0] == check_x and pos[1] == check_y
+            store already = true
+            stop
+          end
+        end
+        if already == false
+          checked + [check_x, check_y]
+          store neighbors = count_neighbors(board, check_x, check_y)
+          store alive = get_cell(board, check_x, check_y)
+          if alive == true and (neighbors == 2 or neighbors == 3)
+            set_cell(new_board, check_x, check_y, true)
+          else if alive == false and neighbors == 3
+            set_cell(new_board, check_x, check_y, true)
+          end
+        end
+      end
+    end
+  end
+  return new_board
+end
+
+function render(board)
+  if length(board) == 0
+    output "[Empty Board]"
+    return
+  end
+  store min_x = board[0][0]
+  store max_x = board[0][0]
+  store min_y = board[0][1]
+  store max_y = board[0][1]
+  loop each cell in board
+    if cell[0] < min_x
+      store min_x = cell[0]
+    end
+    if cell[0] > max_x
+      store max_x = cell[0]
+    end
+    if cell[1] < min_y
+      store min_y = cell[1]
+    end
+    if cell[1] > max_y
+      store max_y = cell[1]
+    end
+  end
+  store y = min_y
+  loop while y <= max_y
+    store line = ""
+    store x = min_x
+    loop while x <= max_x
+      if get_cell(board, x, y) == true
+        store line = line + "##"
+      else
+        store line = line + "  "
+      end
+      store x = x + 1
+    end
+    output line
+    store y = y + 1
+  end
+end
+
+function add_glider(board, x, y)
+  set_cell(board, x + 1, y, true)
+  set_cell(board, x + 2, y + 1, true)
+  set_cell(board, x, y + 2, true)
+  set_cell(board, x + 1, y + 2, true)
+  set_cell(board, x + 2, y + 2, true)
+end
+
+output "=== GAME OF LIFE IN PLACEBO ==="
+store board = make_board()
+add_glider(board, 5, 5)
+output "Initial state:"
+render(board)
+
+loop 4 times
+  store board = next_generation(board)
+  output ""
+  render(board)
+end
+
+output ""
+output "Simulation complete. Final live cell count: " + text(length(board))`
+};
+
+codeEl.value = EXAMPLES.hello;
+
+document.getElementById('examplePicker').addEventListener('change', (e) => {
+  if (e.target.value && EXAMPLES[e.target.value]) {
+    codeEl.value = EXAMPLES[e.target.value];
+    if (e.target.value === 'oracle') inputsEl.value = 'Ada\nblue\n6\n7\nspider';
+  }
+});
+
+runProgram();
+</script>
+</body>
+</html>
